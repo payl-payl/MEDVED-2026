@@ -486,14 +486,30 @@ render();
  const R=$('#reader'),stage=$('#rdStage'),spread=$('#rdSpread'),load=$('#rdLoad'),slider=$('#rdSlider'),num=$('#rdNum'),th=$('#rdTh');
  let pdfjs=null,doc=null,N=0,loading=null,cur=Number(lsGet('medved_page',1))||1,dbl=lsGet('medved_dbl',innerWidth>=980?'1':'0')==='1',zoom=1,tok=0,thOn=false,tasks=[],thBuilt=false;
  const dpr=Math.min(window.devicePixelRatio||1,2);
+ async function blobMod(url){const r=await fetch(url);if(!r.ok)throw new Error(url+': HTTP '+r.status);const t=await r.text();return URL.createObjectURL(new Blob([t],{type:'text/javascript'}))}
+ async function getLib(){
+  const srcs=[['lib/pdf.min.mjs','lib/pdf.worker.min.mjs'],
+   ['https://cdn.jsdelivr.net/npm/pdfjs-dist@5.4.149/legacy/build/pdf.min.mjs','https://cdn.jsdelivr.net/npm/pdfjs-dist@5.4.149/legacy/build/pdf.worker.min.mjs']];
+  let lastErr;
+  for(const [m,w] of srcs){try{
+    const mu=await blobMod(m),wu=await blobMod(w);const lib=await import(mu);lib.GlobalWorkerOptions.workerSrc=wu;return lib}
+   catch(e){lastErr=e;console.warn('pdf.js load failed',m,e)}}
+  throw new Error('Не загрузилась библиотека читалки ('+(lastErr&&lastErr.message||lastErr)+')')}
+ async function fetchPdf(){
+  const r=await fetch(PDF_URL,{cache:'no-cache'});if(!r.ok)throw new Error('Файл '+PDF_URL+' не найден на сайте (HTTP '+r.status+')');
+  const total=Number(r.headers.get('content-length'))||0;let buf;
+  if(r.body&&r.body.getReader){const rd=r.body.getReader(),parts=[];let got=0;for(;;){const {done,value}=await rd.read();if(done)break;parts.push(value);got+=value.length;if(total){const f=Math.min(100,Math.round(got/total*100));$('#rdBar').style.width=f+'%';$('#rdLoadTxt').textContent='Загрузка книги… '+f+'%'}}
+   buf=new Uint8Array(got);let o=0;parts.forEach(p=>{buf.set(p,o);o+=p.length})}
+  else buf=new Uint8Array(await r.arrayBuffer());
+  const head=String.fromCharCode(...buf.slice(0,5));if(head!=='%PDF-')throw new Error('Файл '+PDF_URL+' не похож на PDF (начинается с «'+head.replace(/[^\x20-\x7e]/g,'?')+'»)');
+  return buf}
  function loadPdf(){if(loading)return loading;
   loading=(async()=>{if(LOCKED())throw new Error('locked');
-   pdfjs=await import('./lib/pdf.min.mjs');
-   pdfjs.GlobalWorkerOptions.workerSrc='lib/pdf.worker.min.mjs';
-   const task=pdfjs.getDocument({url:PDF_URL});
-   task.onProgress=p=>{if(p.total){const f=Math.min(100,Math.round(p.loaded/p.total*100));$('#rdBar').style.width=f+'%';$('#rdLoadTxt').textContent='Загрузка книги… '+f+'%'}};
-   doc=await task.promise;N=doc.numPages;slider.max=N;num.max=N;$('#rdTot').textContent=N;if(cur>N)cur=1;return doc})();
-  loading.catch(()=>{});return loading}
+   $('#rdLoadTxt').textContent='Загрузка читалки…';
+   const [lib,data]=await Promise.all([getLib(),fetchPdf()]);pdfjs=lib;
+   $('#rdLoadTxt').textContent='Открываем дело…';
+   doc=await pdfjs.getDocument({data}).promise;N=doc.numPages;slider.max=N;num.max=N;$('#rdTot').textContent=N;if(cur>N)cur=1;return doc})();
+  loading.catch(()=>{loading=null});return loading}
  function leftOf(p){if(!dbl)return p;if(p<=1)return 1;return p%2===0?p:p-1}
  function pagesOf(p){const l=leftOf(p);if(!dbl)return[l];if(l===1)return[1];return l+1<=N?[l,l+1]:[l]}
  async function render(){
@@ -525,7 +541,7 @@ render();
  function prev(){const l=leftOf(cur);if(l>1)go(dbl?(l-1<=1?1:l-2):l-1)}
  function updMode(){$('#rdMode').textContent=dbl?'Разворот':'1 лист';$('#rdMode').classList.toggle('on',dbl)}
  async function open(){if(LOCKED())return;R.classList.add('on');document.documentElement.style.overflow='hidden';updMode();
-  if(!doc){load.style.display='flex';try{await loadPdf()}catch(e){$('#rdLoadTxt').innerHTML='Не удалось открыть книгу в читалке.<br><a href="'+PDF_URL+'" target="_blank" rel="noopener" style="color:#f87171">Открыть PDF в новой вкладке</a>';$('#rdBar').style.width='0';return}}
+  if(!doc){load.style.display='flex';try{await loadPdf()}catch(e){console.error(e);$('#rdLoadTxt').innerHTML='Не удалось открыть книгу в читалке.<br><span style="color:#fca5a5;font-size:14px">'+String(e&&e.message||e).replace(/[<>&]/g,'')+'</span><br><button class="btn" id="rdRetry" style="margin-top:8px">Повторить</button> <a href="'+PDF_URL+'" target="_blank" rel="noopener" style="color:#f87171">Открыть PDF в новой вкладке</a>';$('#rdBar').style.width='0';const rb=$('#rdRetry');if(rb)rb.onclick=open;return}}
   render()}
  function close(){R.classList.remove('on');document.documentElement.style.overflow='';if(document.fullscreenElement)document.exitFullscreen().catch(()=>{})}
  $('#openReader').onclick=open;$('#cover').onclick=open;$('#rdClose').onclick=close;
