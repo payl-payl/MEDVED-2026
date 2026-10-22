@@ -133,6 +133,24 @@ footer .by{margin:6px 0}
 .pop .box{max-width:420px;width:100%;text-align:center;background:#12090b;border:1px solid var(--red);border-radius:18px;padding:26px 22px;box-shadow:0 0 50px rgba(220,38,38,.4)}
 .pop img{max-width:180px;max-height:160px;margin:0 auto 10px;display:block}
 .pop .w{font-size:36px;font-weight:900;color:var(--bone);letter-spacing:.08em;margin:6px 0 14px}
+/* lock */
+.lkhold{position:relative}
+body.locked .lkbody{filter:blur(7px) grayscale(.6);opacity:.45;pointer-events:none;user-select:none}
+.lkmsg{display:none}
+body.locked .lkmsg{display:flex;position:absolute;inset:0;z-index:5;align-items:flex-start;justify-content:center;padding-top:60px}
+.lkmsg div{background:rgba(10,10,13,.92);border:1px solid var(--red2);border-radius:16px;padding:22px 28px;text-align:center;box-shadow:0 0 40px rgba(0,0,0,.7)}
+.lkmsg b{display:block;font-size:22px;color:var(--bone);margin:2px 0}
+.lkmsg span{color:var(--mute);font-size:15px}
+.lkmsg i{display:block;font-style:normal;font-size:30px}
+#adm{position:fixed;left:8px;bottom:8px;z-index:90}
+#admBtn{width:30px;height:30px;border-radius:8px;border:1px solid #2a1518;background:rgba(10,10,13,.6);color:#6a6464;cursor:pointer;opacity:.35;font-size:15px;line-height:1;padding:0}
+#admBtn:hover{opacity:1}
+#admForm{display:none;position:absolute;left:0;bottom:38px;width:230px;background:#101015;border:1px solid var(--red2);border-radius:12px;padding:10px}
+#admForm.on{display:block}
+#admForm input{width:100%;height:38px;margin-bottom:8px;background:#07070a;border:1px solid #3a2226;border-radius:8px;color:var(--bone);padding:0 10px;font:600 15px 'Nunito'}
+#admForm .btn{padding:7px 16px;margin:0;font-size:14px}
+#admMsg{font-size:13px;color:#fca5a5;margin-top:6px;min-height:1em}
+#admForm.err{animation:shk .45s}
 /* ===== READER ===== */
 #reader{position:fixed;inset:0;z-index:200;background:#07070a;display:none;flex-direction:column;color:var(--text)}
 #reader.on{display:flex}
@@ -213,7 +231,7 @@ footer .by{margin:6px 0}
       <b style="font-size:22px">Читать на сайте</b>
       <div class="note" style="margin:4px 0 14px">Листай стрелками, свайпом или ползунком. Есть зум, миниатюры и полный экран. Страница запоминается.</div>
       <button class="btn big" id="openReader">Открыть книгу</button>
-      <a class="btn ghost" href="book.pdf" download>Скачать PDF</a>
+      <a class="btn ghost" data-href="book.pdf" download>Скачать PDF</a>
     </div>
   </div>
 </div></section>
@@ -247,7 +265,7 @@ footer .by{margin:6px 0}
     <div class="card rv"><b>3. Не одиночка</b><br>Не оставайся один. В тайге всегда кто-то рядом.</div>
   </div>
   <div class="card rv" style="display:flex;gap:18px;align-items:center;flex-wrap:wrap"><div style="flex:1;min-width:220px"><b>Медведь 2026 · Roblox</b><div class="note">Откроется страница игры в Roblox.</div></div>
-  <a class="btn big" href="https://www.roblox.com/share?code=88886a839202574fb15e10cdf9777acc&type=ExperienceDetails&stamp=1792148843206" target="_blank" rel="noopener">Играть в Roblox</a></div>
+  <a class="btn big" id="robloxLink" data-href="https://www.roblox.com/share?code=88886a839202574fb15e10cdf9777acc&type=ExperienceDetails&stamp=1792148843206" target="_blank" rel="noopener">Играть в Roblox</a></div>
 </div></section>
 
 <section id="eggs"><div class="wrap">
@@ -302,7 +320,7 @@ footer .by{margin:6px 0}
     <button class="rb hid-m" id="rdZf" title="По размеру окна (0)">100%</button>
     <button class="rb" id="rdZp" title="Увеличить (+)">+</button>
     <button class="rb hid-m" id="rdFs" title="Полный экран (F)">⛶</button>
-    <a class="rb hid-m" id="rdDl" href="book.pdf" download style="display:inline-flex;align-items:center;text-decoration:none" title="Скачать PDF">⬇</a>
+    <a class="rb hid-m" id="rdDl" data-href="book.pdf" download style="display:inline-flex;align-items:center;text-decoration:none" title="Скачать PDF">⬇</a>
     <button class="rb" id="rdClose" title="Закрыть (Esc)">✕</button>
   </div>
   <div class="rd-main">
@@ -324,6 +342,8 @@ footer .by{margin:6px 0}
   </div>
 </div>
 
+<div id="adm"><button id="admBtn" title="Вход для автора" aria-label="Вход для автора">&#9919;</button>
+<form id="admForm" autocomplete="off"><input id="admPw" type="password" placeholder="Пароль автора" autocomplete="off"><button class="btn" type="submit">Войти</button><div id="admMsg"></div></form></div>
 <div id="wormWrap"></div>
 <img id="catEl" alt="">
 <div class="pop" id="pop"><div class="box"><img id="popImg" alt=""><div class="note" id="popCap"></div><div class="w" id="popWord"></div><button class="btn" id="popClose">Закрыть</button></div></div>
@@ -346,6 +366,10 @@ const $=s=>document.querySelector(s);
 const dec=s=>decodeURIComponent(escape(atob(s)));
 const lsGet=(k,d)=>{try{const v=localStorage.getItem(k);return v===null?d:v}catch(e){return d}};
 const lsSet=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
+const EVENT_T=new Date(EVENT_DATE).getTime();
+const ADMIN_HASH="48b13a8fbe14381e7ce9634b5bdc244ee8ee3742102afec5f70e9e280c3f6213";
+let admin=lsGet('medved_admin','')==='1';
+const LOCKED=()=>!admin&&Date.now()<EVENT_T;
 /* ---------- countdown ---------- */
 (function(){const t=new Date(EVENT_DATE).getTime();const p=n=>String(n).padStart(2,'0');
  function tick(){let d=t-Date.now();if(d<=0){$('#cd').innerHTML='<div style="min-width:200px"><b style="font-size:22px">Ивент начался</b><span>заходи в игру</span></div>';return clearInterval(iv)}
@@ -378,7 +402,7 @@ function render(){const n=ORDER.filter(k=>found[k]).length;$('#cnt').textContent
  const wn=$('#winner');
  if(WINNER){wn.innerHTML=`<div class="note">ПОБЕДИТЕЛЬ ИВЕНТА</div><big>${String(WINNER.name).replace(/[<>&]/g,'')}</big><div class="note">Нашёл все 5 пасхалок первым · ${WINNER.date}</div>`}
  else wn.innerHTML=`<div class="note">ПОБЕДИТЕЛЬ ИВЕНТА</div><big>Пока никого</big><div class="note">Кто соберёт все 5 первым, будет висеть здесь.</div>`}
-function reveal(k){const first=!found[k];found[k]=true;save();render();
+function reveal(k){if(LOCKED())return;const first=!found[k];found[k]=true;save();render();
  $('#popImg').src=EGGS[k].img;$('#popCap').textContent=(first?'Пасхалка найдена: ':'Ты уже нашёл: ')+EGGS[k].name+'. Слово:';$('#popWord').textContent=dec(EGGS[k].w);$('#pop').classList.add('on')}
 $('#popClose').onclick=()=>$('#pop').classList.remove('on');
 $('#pop').onclick=e=>{if(e.target.id==='pop')$('#pop').classList.remove('on')};
@@ -396,7 +420,7 @@ dk.addEventListener('mouseleave',()=>{dk.style.setProperty('--x','-999px');dk.st
 keyEl.onclick=()=>reveal('key');
 /* code form */
 function flash(ok,text){const f=$('#codeForm'),m=$('#msg');f.classList.remove('err','ok');void f.offsetWidth;f.classList.add(ok?'ok':'err');m.style.color=ok?'#86efac':'#fca5a5';m.innerHTML=text}
-$('#codeForm').addEventListener('submit',e=>{e.preventDefault();const v=norm($('#inp').value);if(!v){flash(false,'Введи слово.');return}
+$('#codeForm').addEventListener('submit',e=>{e.preventDefault();if(LOCKED())return;const v=norm($('#inp').value);if(!v){flash(false,'Введи слово.');return}
  const h=sha256(v);
  if(h===PHRASE_HASH){ORDER.forEach(k=>found[k]=true);save();render();flash(true,`Верно! Фраза собрана. Скорее напиши организатору: <a href="${CONTACT.href}" target="_blank" rel="noopener">${CONTACT.text}</a>. Победитель тот, кто написал первым.`);return}
  if(['oyster','oyster mushroom','вешенка'].includes(v)){reveal('mushroom');flash(true,'Да. Это его слабость.');return}
@@ -407,12 +431,12 @@ $('#codeForm').addEventListener('submit',e=>{e.preventDefault();const v=norm($('
 let wormTimer=null;
 document.addEventListener('selectionchange',()=>{const s=document.getSelection();if(!s||s.isCollapsed)return;
  const len=s.toString().length,tot=(document.body.innerText||'').length;if(len>tot*0.7)showWorm()});
-function showWorm(){let w=document.getElementById('wormEl');if(!w){w=document.createElement('img');w.id='wormEl';w.src=EGGS.worm.img;w.alt='';w.onclick=()=>reveal('worm');document.body.appendChild(w)}
+function showWorm(){if(LOCKED())return;let w=document.getElementById('wormEl');if(!w){w=document.createElement('img');w.id='wormEl';w.src=EGGS.worm.img;w.alt='';w.onclick=()=>reveal('worm');document.body.appendChild(w)}
  requestAnimationFrame(()=>w.classList.add('show'));clearTimeout(wormTimer);wormTimer=setTimeout(()=>w.classList.remove('show'),9000)}
 /* egg: cat (idle) */
 const cat=$('#catEl');cat.src=EGGS.cat.img;let idle,catHide;
 function arm(){clearTimeout(idle);idle=setTimeout(showCat,CAT_IDLE_MS)}
-function showCat(){const l=Math.random()<.5;cat.style.left=l?'8px':'auto';cat.style.right=l?'auto':'8px';cat.style.top=(20+Math.random()*55)+'vh';cat.classList.add('show');
+function showCat(){if(LOCKED()){arm();return}const l=Math.random()<.5;cat.style.left=l?'8px':'auto';cat.style.right=l?'auto':'8px';cat.style.top=(20+Math.random()*55)+'vh';cat.classList.add('show');
  catHide=setTimeout(()=>{cat.classList.remove('show');arm()},4000)}
 cat.onclick=()=>{clearTimeout(catHide);cat.classList.remove('show');reveal('cat');arm()};
 ['mousemove','keydown','scroll','touchstart','click'].forEach(ev=>addEventListener(ev,()=>{if(!cat.classList.contains('show'))arm()},{passive:true}));arm();
@@ -420,7 +444,7 @@ cat.onclick=()=>{clearTimeout(catHide);cat.classList.remove('show');reveal('cat'
 function ring(){try{const C=new (window.AudioContext||window.webkitAudioContext)(),t=C.currentTime;[523,1046,1568,2093].forEach((f,i)=>{const o=C.createOscillator(),g=C.createGain();o.frequency.value=f;o.type='sine';g.gain.setValueAtTime(.25/(i+1),t);g.gain.exponentialRampToValueAtTime(.0001,t+3.5);o.connect(g).connect(C.destination);o.start(t);o.stop(t+3.6)})}catch(e){}}
 $('#bellBtn').onclick=function(){const others=ORDER.filter(k=>k!=='bell'&&found[k]).length;
  this.classList.remove('shake');void this.offsetWidth;this.classList.add('shake');
- if(others<4)return;ring();setTimeout(()=>reveal('bell'),700)};
+ if(LOCKED()||others<4)return;ring();setTimeout(()=>reveal('bell'),700)};
 render();
 
 /* ---------- player ---------- */
@@ -433,7 +457,7 @@ render();
  async function diag(){try{const r=await fetch(SONGS[0],{method:'HEAD',cache:'no-store'});
    note.textContent=r.ok?'Файл song.mp3 найден, но браузер не смог его проиграть. Проверь, что это настоящий mp3.':'Файл song.mp3 не найден (ошибка '+r.status+'). Загрузи его рядом с index.html и назови song.mp3.'}
   catch(e){note.textContent='Не удаётся загрузить песню. Если открываешь index.html с компьютера, положи song.mp3 в ту же папку.'}}
- pl.onclick=()=>{if(!au.paused){au.pause();return}
+ pl.onclick=()=>{if(LOCKED()){au.pause();return}if(!au.paused){au.pause();return}
   note.textContent='Загрузка…';pl.textContent='…';
   au.play().then(()=>{note.textContent='Включи звук. Лучше в наушниках.'}).catch(err=>{pl.textContent='▶';if(err&&err.name==='NotAllowedError')note.textContent='Браузер не дал включить звук. Нажми ещё раз.';else if(err&&err.name==='AbortError'){}else diag()})};
  au.onplay=()=>{pl.textContent='❚❚';disc.classList.add('spin')};
@@ -463,7 +487,7 @@ render();
  let pdfjs=null,doc=null,N=0,loading=null,cur=Number(lsGet('medved_page',1))||1,dbl=lsGet('medved_dbl',innerWidth>=980?'1':'0')==='1',zoom=1,tok=0,thOn=false,tasks=[],thBuilt=false;
  const dpr=Math.min(window.devicePixelRatio||1,2);
  function loadPdf(){if(loading)return loading;
-  loading=(async()=>{
+  loading=(async()=>{if(LOCKED())throw new Error('locked');
    pdfjs=await import('./lib/pdf.min.mjs');
    pdfjs.GlobalWorkerOptions.workerSrc='lib/pdf.worker.min.mjs';
    const task=pdfjs.getDocument({url:PDF_URL});
@@ -500,7 +524,7 @@ render();
  function next(){const ps=pagesOf(cur);const l=ps[ps.length-1];if(l<N)go(l+1)}
  function prev(){const l=leftOf(cur);if(l>1)go(dbl?(l-1<=1?1:l-2):l-1)}
  function updMode(){$('#rdMode').textContent=dbl?'Разворот':'1 лист';$('#rdMode').classList.toggle('on',dbl)}
- async function open(){R.classList.add('on');document.documentElement.style.overflow='hidden';updMode();
+ async function open(){if(LOCKED())return;R.classList.add('on');document.documentElement.style.overflow='hidden';updMode();
   if(!doc){load.style.display='flex';try{await loadPdf()}catch(e){$('#rdLoadTxt').innerHTML='Не удалось открыть книгу в читалке.<br><a href="'+PDF_URL+'" target="_blank" rel="noopener" style="color:#f87171">Открыть PDF в новой вкладке</a>';$('#rdBar').style.width='0';return}}
   render()}
  function close(){R.classList.remove('on');document.documentElement.style.overflow='';if(document.fullscreenElement)document.exitFullscreen().catch(()=>{})}
@@ -538,7 +562,32 @@ render();
  let rt;addEventListener('resize',()=>{if(!R.classList.contains('on'))return;clearTimeout(rt);rt=setTimeout(render,150)});
  // cover (lazy)
  const cvIO=new IntersectionObserver(async es=>{if(!es[0].isIntersecting)return;cvIO.disconnect();try{await loadPdf();const p=await doc.getPage(1);const vp0=p.getViewport({scale:1});const w=$('#cover').clientWidth||200;const sc=w*dpr/vp0.width;const vp=p.getViewport({scale:sc});const c=document.createElement('canvas');c.width=vp.width;c.height=vp.height;await p.render({canvasContext:c.getContext('2d'),canvas:c,viewport:vp}).promise;$('#cover').replaceChildren(c)}catch(e){}},{rootMargin:'200px'});
- cvIO.observe($('#cover'));
+ window.__cover=()=>cvIO.observe($('#cover'));if(!LOCKED())window.__cover();
+})();
+
+
+/* ---------- замок до даты ивента + вход автора ---------- */
+(function(){
+ const secs=['#book','#song','#game','#eggs'];
+ const fmtD=new Date(EVENT_DATE).toLocaleDateString('ru-RU',{day:'numeric',month:'long',year:'numeric',timeZone:'Europe/Moscow'});
+ secs.forEach(id=>{const w=document.querySelector(id+' .wrap');if(!w)return;const kids=[...w.children].slice(w.children[1]&&w.children[1].classList.contains('lead')?2:1);
+  const hold=document.createElement('div');hold.className='lkhold';const body=document.createElement('div');body.className='lkbody';
+  kids.forEach(k=>body.appendChild(k));const msg=document.createElement('div');msg.className='lkmsg';
+  msg.innerHTML='<div><i>&#128274;</i><b>Откроется '+fmtD+' в 00:00 МСК</b><span>Пока доступ закрыт. Следи за отсчётом наверху.</span></div>';
+  hold.appendChild(body);hold.appendChild(msg);w.appendChild(hold)});
+ const links=[...document.querySelectorAll('[data-href]')];
+ let prev=null;
+ function apply(){const l=LOCKED();document.body.classList.toggle('locked',l);
+  links.forEach(a=>{if(l){a.removeAttribute('href');a.style.pointerEvents='none'}else{a.setAttribute('href',a.dataset.href);a.style.pointerEvents=''}});
+  if(l){const au=document.getElementById('audio');au&&au.pause();document.getElementById('reader').classList.remove('on');document.documentElement.style.overflow=''}
+  else if(prev===true&&window.__cover){window.__cover()}
+  const ab=document.getElementById('admBtn');ab.style.color=admin?'#86efac':'';ab.style.opacity=admin?'.9':'';
+  prev=l}
+ apply();setInterval(()=>{if(LOCKED()!==prev)apply()},1000);
+ const f=document.getElementById('admForm'),inp=document.getElementById('admPw'),m=document.getElementById('admMsg');
+ document.getElementById('admBtn').onclick=()=>{f.classList.toggle('on');if(f.classList.contains('on')){m.innerHTML=admin?'Режим автора включён. <a href="#" id="admOff">Выключить</a>':'';inp.focus();const o=document.getElementById('admOff');if(o)o.onclick=e=>{e.preventDefault();admin=false;lsSet('medved_admin','');apply();f.classList.remove('on')}}};
+ f.addEventListener('submit',e=>{e.preventDefault();if(sha256(inp.value)===ADMIN_HASH){admin=true;lsSet('medved_admin','1');inp.value='';f.classList.remove('on');apply()}
+  else{m.textContent='Неверно.';f.classList.remove('err');void f.offsetWidth;f.classList.add('err')}});
 })();
 
 /* ---------- random backgrounds ---------- */
